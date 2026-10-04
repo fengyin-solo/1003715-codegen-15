@@ -15,6 +15,7 @@ const Evaporation = () => import('@/views/evaporation/index.vue')
 const Cableway = () => import('@/views/cableway/index.vue')
 const Sediment = () => import('@/views/sediment/index.vue')
 const Communication = () => import('@/views/communication/index.vue')
+const CommGrading = () => import('@/views/comm-grading/index.vue')
 const Stationhouse = () => import('@/views/stationhouse/index.vue')
 const Calibration = () => import('@/views/calibration/index.vue')
 const Inspection = () => import('@/views/inspection/index.vue')
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: '/cableway', name: 'cableway', component: Cableway },
     { path: '/sediment', name: 'sediment', component: Sediment },
     { path: '/communication', name: 'communication', component: Communication },
+    { path: '/comm-grading', name: 'comm-grading', component: CommGrading },
     { path: '/stationhouse', name: 'stationhouse', component: Stationhouse },
     { path: '/calibration', name: 'calibration', component: Calibration },
     { path: '/inspection', name: 'inspection', component: Inspection },

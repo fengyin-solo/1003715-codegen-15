@@ -6,7 +6,8 @@
         <p class="page-desc">维护通讯设备，围绕设备编号、设备类型、所属站点、通讯协议做登记、筛选与状态流转。</p>
       </div>
       <div class="page-actions">
-        <button class="btn primary" type="button" @click="openCreate">登记通讯设备</button>
+        <RouterLink class="btn primary" to="/comm-grading">进入故障判级规则台</RouterLink>
+        <button class="btn" type="button" @click="openCreate">登记通讯设备</button>
         <button class="btn" type="button" @click="exportRows">导出通讯系统清单</button>
       </div>
     </header>

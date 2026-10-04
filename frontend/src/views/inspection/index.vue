@@ -67,6 +67,47 @@
       <span>共 {{ total }} 条巡检记录记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="panel comm-check-panel">
+      <h3 class="panel-title">
+        通信核查事项（由通讯系统故障判级规则台同步）
+        <RouterLink class="link" to="/comm-grading">前往判级规则台</RouterLink>
+      </h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>设备编号</th>
+            <th>所属站点</th>
+            <th>判级等级</th>
+            <th>核查事项与说明</th>
+            <th>来源</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in commCheckItems" :key="item.id">
+            <td>{{ item.id }}</td>
+            <td>{{ item.deviceCode }}</td>
+            <td>{{ item.station }}</td>
+            <td>{{ item.level }}</td>
+            <td>{{ item.detail }}</td>
+            <td>{{ item.source === 'manual' ? '人工判断' : '自动判级' }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+              <button v-if="item.status === '待核查'" class="link" type="button" @click="closeCommItem(item.id)">
+                现场核查关闭
+              </button>
+              <span v-else class="page-desc">已处置</span>
+            </td>
+          </tr>
+          <tr v-if="!commCheckItems.length">
+            <td colspan="8" class="empty-state">暂无通信核查事项，判级台给出中断核查/更换结论后会同步到这里</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </section>
 </template>
 
@@ -79,6 +120,8 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
+import { closeCheckItem, listCheckItems } from '@/data/comm-grading/service'
+import type { CommCheckItem } from '@/data/comm-grading/types'
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('inspection')
@@ -92,6 +135,19 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const commCheckItems = ref<CommCheckItem[]>([])
+
+function loadCommChecks() {
+  commCheckItems.value = listCheckItems()
+}
+
+function closeCommItem(id: number) {
+  errorMessage.value = ''
+  const message = closeCheckItem(id)
+  loadCommChecks()
+  reload()
+  void message
+}
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -133,5 +189,8 @@ function reload() {
   }
 }
 
-onMounted(reload)
+onMounted(() => {
+  reload()
+  loadCommChecks()
+})
 </script>
