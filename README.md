@@ -55,17 +55,41 @@ npm run build
 | 蒸发观测 | `evaporation` | 蒸发观测记录 | 记录编号、站点编号、观测日期 |
 | 测流缆道 | `cableway` | 测流缆道 | 缆道编号、所属站点、跨度米数 |
 | 泥沙监测 | `sediment` | 泥沙监测记录 | 记录编号、站点编号、采样时间 |
-| 通讯系统 | `communication` | 通讯设备 | 设备编号、设备类型、所属站点 |
+| 通讯系统 | `communication` | 通讯设备 | 设备编号、设备类型、所属站点、通讯协议、信号阈值、最近通讯时刻 |
 | 站房维护 | `stationhouse` | 站房维护记录 | 记录编号、站点编号、维护类型 |
 | 仪器检定 | `calibration` | 仪器检定记录 | 记录编号、仪器编号、仪器名称 |
 | 巡检记录 | `inspection` | 巡检记录 | 记录编号、站点编号、巡检日期 |
 | 测报方案 | `plan` | 测报方案 | 方案编号、方案名称、适用范围 |
 
+## 通讯设备故障判级规则台
+
+通讯系统页（`communication`）内置「故障判级规则台」页签，代码：
+
+- `frontend/src/views/communication/GradeConsole.vue`：规则配置、设备判级表、历史结论
+- `frontend/src/api/grade-service.ts`：自动判级、人工判级、结论落库守卫
+- `frontend/src/data/grade-store.ts`：判级阈值规则与结论的独立持久化（`hydrology-monitor-station:communication-grade`）
+
+业务约定：
+
+1. 按**通讯协议**（4G / 5G / 北斗 / 超短波）配置弱信号阈值、中断信号阈值、断联超时小时数、中断累计更换次数；
+   结合**设备编号、所属站点、信号阈值、最近通讯时刻**自动给出「通讯正常 / 信号弱 / 建议中断核查 / 建议更换」。
+2. 自动结果与人工判断冲突时**以人工为准**：人工判级直接落最终级别，结论保留自动建议并打「冲突」标记。
+3. **历史缺读迁移**：v1 占位/缺读数据升级到 schema v2 时，身份字段用新种子补齐，信号强度、最近通讯时刻等
+   读数不编造、保留为空并标注「历史缺读，待人工补录」；缺读设备自动上报会被拦下转人工，不自动下中断结论。
+4. **已停用设备不允许保存新结论**（规则台与设备清单动作流均拦截），也不再参与批量自动上报。
+5. 中断/更换结论落地时，向**巡检记录**模块同步生成一条「通信核查-{设备编号}」事项（同设备待办去重）；
+   人工恢复正常时自动关闭该设备的核查待办。巡检页新增「通信核查事项」统计。
+6. **同一设备重复并发上报只接受一个结论**：以「上报批次」为去重键，同批次重复提交（含批量并发）只保留首个结论；
+   「开启新一轮上报批次」可重新验证。
+7. 设备新增「已停用」状态与「停用设备」动作；判级落定同时回写通讯设备状态（通讯中断 / 待更换 / 信号弱 / 通讯正常）。
+8. 结论带判级时的阈值规则快照，之后再调阈值不影响历史结论追溯。
+
 ## 约定
 
 - 每个模块的页面在 `frontend/src/views/<模块>/index.vue`，页面只负责渲染，读写统一走
-  `frontend/src/api/local-service.ts`。
+  `frontend/src/api/local-service.ts`（判级规则台例外，走 `frontend/src/api/grade-service.ts`）。
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
-- 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries` 这一项，或调用 `resetModule(模块)`。
+- 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries`（判级数据清
+  `hydrology-monitor-station:communication-grade`）这一项，或调用 `resetModule(模块)`。

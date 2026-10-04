@@ -40,6 +40,10 @@ export function runAction(key: string, id: number, action: string): ActionResult
     return { ok: false, message: `没有找到编号为 ${id} 的${meta.entity}` }
   }
   const current = String(rows[index].status)
+  // 通讯设备停用后不允许再保存新结论 / 继续流转；只能先重新启用（规则台人工判正常）
+  if (key === 'communication' && current === '已停用' && target !== '已停用') {
+    return { ok: false, message: '设备已停用，不允许保存新结论或继续状态流转' }
+  }
   if (current === target) {
     return { ok: false, message: `${meta.entity}已经是「${target}」，不用重复操作` }
   }

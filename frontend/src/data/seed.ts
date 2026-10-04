@@ -1,5 +1,45 @@
 import type { EntryRow } from './types'
 
+function row(id: number, status: string, pending: boolean, abnormal: boolean, fields: Record<string, string | number>): EntryRow {
+  return { id, status, pending, abnormal, ...fields }
+}
+
+// 通讯设备判级所需的可读样本：信号强度单位 dBm（负数，越接近 0 越强），最近通讯时刻为 ISO 时间。
+// 时刻按播种时的当前时间倒推生成（UTC ISO 串），避免写死日期几天后所有设备都变成断联。
+// 历史缺读设备（COMM-0006）读数保留为空，由判级规则台提示人工补录，不自动下中断结论。
+function hoursAgoIso(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString()
+}
+
+function communicationSeed(): EntryRow[] {
+  return [
+    row(1, '通讯正常', true, false, {
+      设备编号: 'COMM-0001', 设备类型: '4G DTU', 所属站点: '青山水文站', 通讯协议: '4G',
+      信号强度: -68, 最近通讯时刻: hoursAgoIso(0.5), 维护人员: '王建国', 设备状态: '在线',
+    }),
+    row(2, '信号弱', true, true, {
+      设备编号: 'COMM-0002', 设备类型: '5G 网关', 所属站点: '柳湾水文站', 通讯协议: '5G',
+      信号强度: -105, 最近通讯时刻: hoursAgoIso(1), 维护人员: '李文静', 设备状态: '在线',
+    }),
+    row(3, '通讯中断', false, true, {
+      设备编号: 'COMM-0003', 设备类型: '北斗终端', 所属站点: '北塬雨量站', 通讯协议: '北斗',
+      信号强度: -118, 最近通讯时刻: hoursAgoIso(30), 维护人员: '赵磊', 设备状态: '离线',
+    }),
+    row(4, '通讯中断', false, true, {
+      设备编号: 'COMM-0004', 设备类型: '超短波电台', 所属站点: '峡口水位站', 通讯协议: '超短波',
+      信号强度: -112, 最近通讯时刻: hoursAgoIso(60), 维护人员: '孙鹏', 设备状态: '离线',
+    }),
+    row(5, '已停用', false, false, {
+      设备编号: 'COMM-0005', 设备类型: '4G DTU', 所属站点: '旧码头水位站', 通讯协议: '4G',
+      信号强度: -95, 最近通讯时刻: hoursAgoIso(24 * 45), 维护人员: '王建国', 设备状态: '退役封存',
+    }),
+    row(6, '通讯正常', true, false, {
+      设备编号: 'COMM-0006', 设备类型: '5G 网关', 所属站点: '沙岭水文站', 通讯协议: '5G',
+      信号强度: '', 最近通讯时刻: '', 维护人员: '李文静', 设备状态: '在线', 读数备注: '历史缺读，待人工补录',
+    }),
+  ]
+}
+
 // 示例数据：首次打开时播种，之后浏览器里的改动优先，重置才会回到这份。
 export const SEED_ROWS: Record<string, EntryRow[]> = {
   "station": [
@@ -574,50 +614,7 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "记录状态": "泥沙监测样例3"
     }
   ],
-  "communication": [
-    {
-      "id": 1,
-      "status": "通讯正常",
-      "pending": true,
-      "abnormal": false,
-      "设备编号": "COMM-0001",
-      "设备类型": "通讯系统样例1",
-      "所属站点": "通讯系统样例1",
-      "通讯协议": "通讯系统样例1",
-      "信号强度": "通讯系统样例1",
-      "最近通讯时刻": "通讯系统样例1",
-      "维护人员": "通讯系统样例1",
-      "设备状态": "通讯系统样例1"
-    },
-    {
-      "id": 2,
-      "status": "信号弱",
-      "pending": true,
-      "abnormal": true,
-      "设备编号": "COMM-0002",
-      "设备类型": "通讯系统样例2",
-      "所属站点": "通讯系统样例2",
-      "通讯协议": "通讯系统样例2",
-      "信号强度": "通讯系统样例2",
-      "最近通讯时刻": "通讯系统样例2",
-      "维护人员": "通讯系统样例2",
-      "设备状态": "通讯系统样例2"
-    },
-    {
-      "id": 3,
-      "status": "通讯中断",
-      "pending": false,
-      "abnormal": false,
-      "设备编号": "COMM-0003",
-      "设备类型": "通讯系统样例3",
-      "所属站点": "通讯系统样例3",
-      "通讯协议": "通讯系统样例3",
-      "信号强度": "通讯系统样例3",
-      "最近通讯时刻": "通讯系统样例3",
-      "维护人员": "通讯系统样例3",
-      "设备状态": "通讯系统样例3"
-    }
-  ],
+  "communication": communicationSeed(),
   "stationhouse": [
     {
       "id": 1,

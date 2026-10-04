@@ -85,13 +85,23 @@ const meta = moduleMeta('inspection')
 const columns = ["记录编号", "站点编号", "巡检日期", "巡检人员", "检查项目", "发现问题", "处理措施", "巡检状态"]
 const actions = ["完成巡检", "报告故障", "确认处置"]
 const statuses = ["待巡检", "已巡检", "发现故障", "已处置"]
-const stats = [{"label": "本月巡检次数", "value": 0}, {"label": "已巡检站点", "value": 0}, {"label": "待处置故障", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
-const filterFields = columns.slice(0, 3)
+const filterFields = ["记录编号", "站点编号", "检查项目"]
+
+// 通信核查事项由通讯系统故障判级规则台在中断/更换结论落地时同步生成
+const communicationChecks = computed(() =>
+  rows.value.filter((row) => String(row['检查项目'] ?? '').startsWith('通信核查-')),
+)
+const stats = computed(() => [
+  { label: '本月巡检次数', value: rows.value.length },
+  { label: '已巡检站点', value: rows.value.filter((row) => row.status === '已巡检').length },
+  { label: '待处置故障', value: rows.value.filter((row) => row.pending).length },
+  { label: '通信核查事项', value: communicationChecks.value.length },
+])
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
